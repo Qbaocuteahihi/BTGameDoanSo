@@ -92,6 +92,7 @@ btGuess.onclick = () => {
 
   console.log(guess);
 };
+const btRestart = document.getElementById("btRestart");
 
 function restartGame() {
   mysteryNumber = Math.floor(Math.random() * 100) + 1;
@@ -129,8 +130,9 @@ function stopTimer() {
   clearInterval(timer);
 }
 btRestart.onclick = () => {
-  newGame();
+  restartGame();
 };
+
 function startConfetti() {
   let W = window.innerWidth;
   let H = window.innerHeight;
