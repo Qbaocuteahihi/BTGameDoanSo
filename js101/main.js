@@ -7,40 +7,48 @@ const gameOverCard = document.getElementById("gameOverCard");
 const winCard = document.getElementById("winCard");
 const canvas = document.getElementById("canvas");
 const lbPrompt = document.getElementById("lbPrompt");
+const lbTimeTaken = document.getElementById("lbTimeTaken");
+const timerElement = document.getElementById("timer");
 
-const tmpIndicatorDisplatType = indicatorWave.style.display;
-const tmpGuessCardDisplatType = guessCard.style.display;
+const tmpIndicatorDisplayType = indicatorWave.style.display;
+const tmpGuessCardDisplayType = guessCard.style.display;
 
 // disable indicatorWave
 indicatorWave.style.display = "none";
 // disable guessCard
 guessCard.style.display = "none";
-//disable gameOverCard
+// disable gameOverCard
 gameOverCard.style.display = "none";
-//disable winCard
+// disable winCard
 winCard.style.display = "none";
 
 let mysteryNumber = Math.floor(Math.random() * 100) + 1;
-let live = 5;
+let lives = 5;
+let timer;
+let startTime;
+
+const audioTLO = new Audio("./assets/TLO.mp3");
 
 introCard.onclick = () => {
-  new Audio("./assets/TLO.mp3").play();
+  audioTLO.currentTime = 0;
+  audioTLO.play();
   mysteryNumber = Math.floor(Math.random() * 100) + 1;
   console.log(mysteryNumber);
-  live = 5;
+  lives = 5;
   document.documentElement.style.setProperty(
     "--tube-percentage",
-    (5 - live) * 20 + "%"
+    (5 - lives) * 20 + "%"
   );
   // start the game
   introCard.classList.add("zoomOutAndFadeOut");
   setTimeout(() => {
     introCard.style.display = "none";
-    indicatorWave.style.display = tmpIndicatorDisplatType;
-    guessCard.style.display = tmpGuessCardDisplatType;
+    indicatorWave.style.display = tmpIndicatorDisplayType;
+    guessCard.style.display = tmpGuessCardDisplayType;
     gameOverCard.style.display = "none";
     winCard.style.display = "none";
     canvas.style.display = "none";
+    startTimer();
   }, 1000);
 };
 
@@ -49,17 +57,21 @@ btGuess.onclick = () => {
   // set css variables --tube-percentage
   document.documentElement.style.setProperty(
     "--tube-percentage",
-    (5 - live) * 20 + "%"
+    (5 - lives) * 20 + "%"
   );
 
   if (guess === mysteryNumber) {
     guessCard.style.display = "none";
-    //   gameOverCard.style.display = tmpGuessCardDisplatType;
-    winCard.style.display = tmpGuessCardDisplatType;
+    winCard.style.display = tmpGuessCardDisplayType;
     let lbResultOnWin = document.getElementById("lbResultOnWin");
-    lbResultOnWin.innerHTML = `The number was ${mysteryNumber}`;
+    let elapsedTime = (Date.now() - startTime) / 1000;
+    let minutes = Math.floor(elapsedTime / 60);
+    let seconds = Math.floor(elapsedTime % 60);
+    lbResultOnWin.innerHTML = `Đáp Án Là ${mysteryNumber}`;
+    lbTimeTaken.innerHTML = `Bạn hoàn thành thử thách này trong ${minutes} phút ${seconds} giây.`;
 
     new Audio("./assets/correct.mp3").play();
+    stopTimer();
     startConfetti();
   } else if (guess < mysteryNumber) {
     lbPrompt.innerHTML = "Bạn Đoán Thấp Quá Rồi. Làm Lại Nào. ";
@@ -67,15 +79,15 @@ btGuess.onclick = () => {
     new Audio("./assets/wrong.mp3").play();
   } else {
     lbPrompt.innerHTML = "Bạn Đoán Cao Quá Rồi. Làm Lại Nào.";
-
     new Audio("./assets/wrong.mp3").play();
   }
-  live--;
-  if (live === 0) {
+  lives--;
+  if (lives === 0) {
     guessCard.style.display = "none";
-    gameOverCard.style.display = tmpGuessCardDisplatType;
+    gameOverCard.style.display = tmpGuessCardDisplayType;
     let lbResultOnOver = document.getElementById("lbResultOnOver");
     lbResultOnOver.innerHTML = `Đáp Án Là ${mysteryNumber}`;
+    stopTimer();
   }
 
   console.log(guess);
@@ -83,29 +95,45 @@ btGuess.onclick = () => {
 
 function restartGame() {
   mysteryNumber = Math.floor(Math.random() * 100) + 1;
-  live = 5;
+  lives = 5;
   document.documentElement.style.setProperty(
     "--tube-percentage",
-    (5 - live) * 20 + "%"
+    (5 - lives) * 20 + "%"
   );
   introCard.classList.remove("zoomOutAndFadeOut");
-  introCard.style.display = tmpGuessCardDisplatType;
+  introCard.style.display = tmpGuessCardDisplayType;
   indicatorWave.style.display = "none";
   guessCard.style.display = "none";
   gameOverCard.style.display = "none";
   winCard.style.display = "none";
   guessInput.value = "";
+  stopConfetti();
+  startTimer();
+  audioTLO.currentTime = 0;
+  audioTLO.play();
 }
 
-btRestart.onclick = () => {
-  console.log("restart");
-  restartGame();
-};
+function startTimer() {
+  startTime = Date.now();
+  timer = setInterval(() => {
+    let elapsedTime = (Date.now() - startTime) / 1000;
+    let minutes = Math.floor(elapsedTime / 60);
+    let seconds = Math.floor(elapsedTime % 60);
+    timerElement.innerHTML = `${String(minutes).padStart(2, "0")}:${String(
+      seconds
+    ).padStart(2, "0")}`;
+  }, 1000);
+}
 
+function stopTimer() {
+  clearInterval(timer);
+}
+btRestart.onclick = () => {
+  newGame();
+};
 function startConfetti() {
   let W = window.innerWidth;
   let H = window.innerHeight;
-  const canvas = document.getElementById("canvas");
   canvas.style.display = "block";
   const context = canvas.getContext("2d");
   const maxConfettis = 150;
@@ -132,9 +160,9 @@ function startConfetti() {
   }
 
   function confettiParticle() {
-    this.x = Math.random() * W; // x
-    this.y = Math.random() * H - H; // y
-    this.r = randomFromTo(11, 33); // radius
+    this.x = Math.random() * W;
+    this.y = Math.random() * H - H;
+    this.r = randomFromTo(11, 33);
     this.d = Math.random() * maxConfettis + 11;
     this.color =
       possibleColors[Math.floor(Math.random() * possibleColors.length)];
@@ -154,12 +182,8 @@ function startConfetti() {
 
   function Draw() {
     const results = [];
-
-    // Magical recursive functional love
     requestAnimationFrame(Draw);
-
     context.clearRect(0, 0, W, window.innerHeight);
-
     for (var i = 0; i < maxConfettis; i++) {
       results.push(particles[i].draw());
     }
@@ -168,15 +192,12 @@ function startConfetti() {
     let remainingFlakes = 0;
     for (var i = 0; i < maxConfettis; i++) {
       particle = particles[i];
-
       particle.tiltAngle += particle.tiltAngleIncremental;
       particle.y += (Math.cos(particle.d) + 3 + particle.r / 2) / 2;
       particle.tilt = Math.sin(particle.tiltAngle - i / 3) * 15;
 
       if (particle.y <= H) remainingFlakes++;
 
-      // If a confetti has fluttered out of view,
-      // bring it back to above the viewport and let if re-fall.
       if (particle.x > W + 30 || particle.x < -30 || particle.y > H) {
         particle.x = Math.random() * W;
         particle.y = -30;
@@ -198,22 +219,15 @@ function startConfetti() {
     false
   );
 
-  // Push new confetti objects to `particles[]`
   for (var i = 0; i < maxConfettis; i++) {
     particles.push(new confettiParticle());
   }
 
-  // Initialize
   canvas.width = W;
   canvas.height = H;
   Draw();
 }
 
 function stopConfetti() {
-  let W = window.innerWidth;
-  let H = window.innerHeight;
-  const canvas = document.getElementById("canvas");
-  const context = canvas.getContext("2d");
-  // clear canvas
-  context.clearRect(0, 0, W, H);
+  canvas.style.display = "none";
 }
